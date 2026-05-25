@@ -1,46 +1,38 @@
 const express = require('express');
-const { generateTicketFromAI, handleAiConversation } = require('../services/openaiService');
+const { createTicket, handleConversation } = require('../controllers/aiController');
 const { protect } = require('../middleware/authMiddleware');
-const { calculateDeadline, getSlaStatus } = require('../services/slaService');
+const rateLimiter = require('../middleware/rateLimiter');
+const validate = require('../middleware/validate');
 
 const router = express.Router();
 
-router.post('/ai-create-ticket', protect, async (req, res, next) => {
-  try {
-    const { prompt } = req.body;
+// Define input validation schemas for AI routes
+const aiCreateSchema = {
+  prompt: { required: true, minLength: 5, maxLength: 1000 },
+};
 
-    if (!prompt || typeof prompt !== 'string') {
-      return res.status(400).json({ message: 'AI prompt is required' });
-    }
+const aiConversationSchema = {
+  message: { required: true, minLength: 1, maxLength: 1000 },
+};
 
-    const parsed = await generateTicketFromAI(prompt);
-    const deadline = calculateDeadline(parsed.priority);
-    const slaStatus = getSlaStatus(deadline);
-
-    res.json({
-      ...parsed,
-      deadline,
-      status: 'Open',
-      slaStatus,
-    });
-  } catch (error) {
-    next(error);
-  }
+// Rate-limiting for OpenAI endpoints to prevent API cost spikes (10 requests per minute)
+const aiRateLimit = rateLimiter({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: 'Too many AI requests. Please try again in a minute.',
 });
 
-router.post('/ai-conversation', protect, async (req, res, next) => {
-  try {
-    const { message, history } = req.body;
-
-    if (!message || typeof message !== 'string') {
-      return res.status(400).json({ message: 'AI message is required' });
-    }
-
-    const result = await handleAiConversation({ message, history });
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
+// Route health check
+router.get('/test', (req, res) => {
+  res.json({ success: true, message: 'AI routes working' });
 });
+
+// Standard REST endpoints mounted under /api/ai
+router.post('/create-ticket', protect, aiRateLimit, validate(aiCreateSchema), createTicket);
+router.post('/conversation', protect, aiRateLimit, validate(aiConversationSchema), handleConversation);
+
+// Backward Compatibility Aliases
+router.post('/ai-create-ticket', protect, aiRateLimit, validate(aiCreateSchema), createTicket);
+router.post('/ai-conversation', protect, aiRateLimit, validate(aiConversationSchema), handleConversation);
 
 module.exports = router;

@@ -30,6 +30,16 @@ const ticketSchema = new mongoose.Schema(
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+      default: null,
+    },
+    assignedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    assignedAt: {
+      type: Date,
+      default: null,
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

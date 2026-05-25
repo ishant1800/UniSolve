@@ -187,6 +187,92 @@ const updateTicket = async (req, res, next) => {
   }
 };
 
+const assignTicket = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { agentId } = req.body;
+    const ticket = await Ticket.findById(id);
+
+    if (!ticket) {
+      return res.status(404).json({ message: 'Ticket not found' });
+    }
+
+    const isAdmin = req.user.role === 'admin';
+    const isAgent = req.user.role === 'agent';
+
+    if (!isAdmin && !isAgent) {
+      return res.status(403).json({ message: 'Access denied: insufficient permissions' });
+    }
+
+    // If agentId is provided, verify it is a valid agent
+    let targetAgent = null;
+    if (agentId) {
+      const mongoose = require('mongoose');
+      if (!mongoose.Types.ObjectId.isValid(agentId)) {
+        return res.status(400).json({ message: 'Invalid agentId format' });
+      }
+
+      targetAgent = await User.findById(agentId);
+      if (!targetAgent || targetAgent.role !== 'agent') {
+        return res.status(400).json({ message: 'Target user is not a valid agent' });
+      }
+    }
+
+    if (isAgent && !isAdmin) {
+      // Agents can only claim unassigned tickets for themselves, or release their own tickets
+      if (agentId) {
+        if (agentId !== req.user._id.toString()) {
+          return res.status(403).json({ message: 'Agents can only claim tickets for themselves' });
+        }
+        if (ticket.assignedTo && !ticket.assignedTo.equals(req.user._id)) {
+          return res.status(403).json({ message: 'Ticket is already assigned to another agent' });
+        }
+      } else {
+        if (!ticket.assignedTo || !ticket.assignedTo.equals(req.user._id)) {
+          return res.status(403).json({ message: 'Agents can only release their own tickets' });
+        }
+      }
+    }
+
+    // Determine event type
+    let socketEvent = 'ticketAssigned';
+    if (!agentId) {
+      socketEvent = 'ticketUnassigned';
+    } else if (ticket.assignedTo && !ticket.assignedTo.equals(agentId)) {
+      socketEvent = 'ticketReassigned';
+    }
+
+    const previousAssignee = ticket.assignedTo;
+
+    ticket.assignedTo = agentId || null;
+    ticket.assignedBy = agentId ? req.user._id : null;
+    ticket.assignedAt = agentId ? new Date() : null;
+
+    await ticket.save();
+
+    const populatedTicket = await Ticket.findById(ticket._id)
+      .populate('createdBy', 'name email role')
+      .populate('assignedTo', 'name email role')
+      .populate('assignedBy', 'name email role');
+
+    // Socket broadcasts
+    const { emitToAdmins, emitToUser } = require('../services/socketService');
+    emitToAdmins(socketEvent, populatedTicket);
+    emitToUser(populatedTicket.createdBy._id.toString(), 'myTicketUpdate', populatedTicket);
+
+    if (populatedTicket.assignedTo) {
+      emitToUser(populatedTicket.assignedTo._id.toString(), 'myTicketUpdate', populatedTicket);
+    }
+    if (previousAssignee && previousAssignee.toString() !== (populatedTicket.assignedTo?._id?.toString() || '')) {
+      emitToUser(previousAssignee.toString(), 'myTicketUpdate', populatedTicket);
+    }
+
+    res.json(populatedTicket);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const deleteTicket = async (req, res, next) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
@@ -205,4 +291,4 @@ const deleteTicket = async (req, res, next) => {
   }
 };
 
-module.exports = { createTicket, getTickets, getTicketById, updateTicket, deleteTicket };
+module.exports = { createTicket, getTickets, getTicketById, updateTicket, deleteTicket, assignTicket };
