@@ -272,7 +272,7 @@ const DashboardPage = () => {
       </section>
 
       {/* Floating Premium Toast Notifications List */}
-      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none">
+      <div className="fixed bottom-5 left-4 right-4 md:left-auto md:right-5 md:w-96 z-50 flex flex-col gap-2 pointer-events-none">
         {toasts.map((t) => (
           <div
             key={t.id}

@@ -58,6 +58,7 @@ const AgentDashboard = () => {
   const [agentSearch, setAgentSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
 
   // Premium Toast States
   const [toasts, setToasts] = useState([]);
@@ -201,6 +202,7 @@ const AgentDashboard = () => {
 
   const handleSelectTicket = (ticket) => {
     setSelectedTicket(ticket);
+    setMobileDetailOpen(true);
   };
 
   useEffect(() => {
@@ -417,7 +419,7 @@ const AgentDashboard = () => {
               </div>
             ) : (
               <div className="overflow-hidden rounded-3xl border border-slate-200 shadow-sm">
-                <div className="grid grid-cols-[1fr_120px_120px_120px] gap-4 bg-slate-50 border-b border-slate-200 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+                <div className="hidden md:grid grid-cols-[1fr_120px_120px_120px] gap-4 bg-slate-50 border-b border-slate-200 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500">
                   <span>Ticket Details</span>
                   <span>Priority</span>
                   <span>Status</span>
@@ -429,21 +431,33 @@ const AgentDashboard = () => {
                       key={ticket._id}
                       type="button"
                       onClick={() => handleSelectTicket(ticket)}
-                      className={`group flex w-full items-center gap-4 px-5 py-4 text-left transition duration-200 hover:bg-slate-50/80 ${selectedTicket?._id === ticket._id ? 'bg-indigo-50/40 hover:bg-indigo-50/50' : ''}`}
+                      className={`group flex flex-col md:grid md:grid-cols-[1fr_120px_120px_120px] w-full items-start md:items-center gap-2 md:gap-4 px-5 py-4 text-left transition duration-200 hover:bg-slate-50/80 ${selectedTicket?._id === ticket._id ? 'bg-indigo-50/40 hover:bg-indigo-50/50' : ''}`}
                     >
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 w-full">
                         <p className="text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors duration-150">{ticket.title}</p>
                         <p className="mt-1 text-xs text-slate-400 font-medium">{ticket.department} • Created {formatDate(ticket.createdAt)}</p>
+                        {/* Mobile view metadata badges */}
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2 md:hidden">
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${ticket.priority === 'High' ? 'bg-rose-100 text-rose-800' : ticket.priority === 'Medium' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800'}`}>
+                            {ticket.priority}
+                          </span>
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${statusBadge(ticket.status)}`}>
+                            {ticket.status}
+                          </span>
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${slaBadge(ticket.slaStatus)}`}>
+                            {ticket.slaStatus}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex min-w-[7.5rem] items-center gap-2">
+                      <div className="hidden md:flex min-w-[7.5rem] items-center gap-2">
                         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${ticket.priority === 'High' ? 'bg-rose-100 text-rose-800' : ticket.priority === 'Medium' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800'}`}>
                           {ticket.priority}
                         </span>
                       </div>
-                      <div className="min-w-[7.5rem]">
+                      <div className="hidden md:block min-w-[7.5rem]">
                         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide ${statusBadge(ticket.status)}`}>{ticket.status}</span>
                       </div>
-                      <div className="min-w-[7.5rem]">
+                      <div className="hidden md:block min-w-[7.5rem]">
                         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${slaBadge(ticket.slaStatus)}`}>{ticket.slaStatus}</span>
                       </div>
                     </button>
@@ -454,14 +468,37 @@ const AgentDashboard = () => {
           </section>
         </div>
 
-        <aside className="space-y-4">
+        {/* Backdrop for mobile slide-over details panel */}
+        {mobileDetailOpen && (
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setMobileDetailOpen(false)}
+          />
+        )}
+
+        <aside
+          className={`
+            space-y-4 fixed inset-y-0 right-0 z-50 w-full max-w-md bg-slate-50 border-l border-slate-200 shadow-2xl p-6 overflow-y-auto transition-transform duration-300 ease-in-out
+            lg:relative lg:translate-x-0 lg:w-auto lg:max-w-none lg:shadow-none lg:border-none lg:p-0 lg:z-0 lg:bg-transparent lg:overflow-y-visible
+            ${mobileDetailOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
+          `}
+        >
           <div className="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
             <div className="mb-5 flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">Ticket details</h2>
                 <p className="text-xs text-slate-400 font-medium">Select a ticket to review and update status.</p>
               </div>
-              <span className="rounded-full bg-indigo-50 text-indigo-700 px-3 py-1 text-xs font-bold border border-indigo-100">Details</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMobileDetailOpen(false)}
+                  className="lg:hidden rounded-xl bg-slate-100 hover:bg-slate-200 border px-3 py-1.5 text-xs font-bold text-slate-600 transition active:scale-95"
+                >
+                  ✕ Close
+                </button>
+                <span className="hidden lg:inline rounded-full bg-indigo-50 text-indigo-700 px-3 py-1 text-xs font-bold border border-indigo-100">Details</span>
+              </div>
             </div>
             
             {!selectedTicket ? (
@@ -637,7 +674,7 @@ const AgentDashboard = () => {
       </div>
 
       {/* Floating Premium Toast Notifications List */}
-      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none">
+      <div className="fixed bottom-5 left-4 right-4 md:left-auto md:right-5 md:w-96 z-50 flex flex-col gap-2 pointer-events-none">
         {toasts.map((t) => (
           <div
             key={t.id}

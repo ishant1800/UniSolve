@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
 
 // SVG Grid Pattern for premium tech backdrop
 const GridBackground = () => (
@@ -55,6 +55,28 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // 3D Perspective Motion Values
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
+
+  const rotateX = useTransform(mouseY, [0, 1], [15, -15]);
+  const rotateY = useTransform(mouseX, [0, 1], [-15, 15]);
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const xVal = (e.clientX - rect.left) / width;
+    const yVal = (e.clientY - rect.top) / height;
+    mouseX.set(xVal);
+    mouseY.set(yVal);
+  };
+
+  const handleMouseLeave = () => {
+    mouseX.set(0.5);
+    mouseY.set(0.5);
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
@@ -79,14 +101,20 @@ const LoginPage = () => {
         <GridBackground />
 
         {/* Brand Header */}
-        <div className="relative z-10 flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 shadow-md shadow-indigo-500/25">
+        <motion.div 
+          whileHover={{ scale: 1.05 }} 
+          className="relative z-10 flex items-center gap-2 cursor-pointer w-fit"
+        >
+          <motion.div 
+            whileHover={{ rotate: 15 }} 
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 shadow-md shadow-indigo-500/25"
+          >
             <span className="text-white text-lg font-black font-mono">U</span>
-          </div>
+          </motion.div>
           <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
             UniSolve
           </span>
-        </div>
+        </motion.div>
 
         {/* Central Slogan/Tagline */}
         <div className="relative z-10 max-w-md my-auto space-y-6">
@@ -148,28 +176,48 @@ const LoginPage = () => {
         <div className="absolute top-[20%] left-[20%] h-[300px] w-[300px] rounded-full bg-indigo-500/5 blur-[80px] pointer-events-none" />
         
         {/* Mobile Header Logo */}
-        <div className="lg:hidden flex items-center gap-2 mb-8">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 shadow">
+        <motion.div 
+          whileHover={{ scale: 1.05 }} 
+          className="lg:hidden flex items-center gap-2 mb-8 cursor-pointer"
+        >
+          <motion.div 
+            whileHover={{ rotate: 15 }} 
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 shadow"
+          >
             <span className="text-white text-base font-black font-mono">U</span>
-          </div>
+          </motion.div>
           <span className="text-lg font-bold text-white tracking-tight">UniSolve</span>
-        </div>
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          style={{ 
+            rotateX, 
+            rotateY, 
+            transformStyle: 'preserve-3d', 
+            perspective: 1000 
+          }}
           className="w-full max-w-[440px] rounded-3xl border border-white/[0.06] bg-slate-950/60 backdrop-blur-lg p-8 md:p-10 shadow-2xl shadow-black/40"
         >
-          <div className="space-y-2">
+          <div className="space-y-2" style={{ transform: 'translateZ(35px)', transformStyle: 'preserve-3d' }}>
             <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">Sign in</h1>
             <p className="text-sm text-slate-400">Welcome back! Please enter your details below.</p>
           </div>
 
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: -10, x: 0 }}
+              animate={{ 
+                opacity: 1, 
+                y: 0,
+                x: [0, -10, 10, -10, 10, -5, 5, 0]
+              }}
+              transition={{ duration: 0.5 }}
+              style={{ transform: 'translateZ(40px)' }}
               role="alert"
               aria-live="polite"
               className="mt-6 flex items-start gap-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 p-4 text-xs font-semibold text-rose-400"
@@ -181,9 +229,15 @@ const LoginPage = () => {
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4" style={{ transform: 'translateZ(30px)', transformStyle: 'preserve-3d' }}>
             {/* Email Field */}
-            <div className="space-y-1.5">
+            <motion.div 
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.4, ease: 'easeOut' }}
+              style={{ transform: 'translateZ(20px)' }}
+              className="space-y-1.5"
+            >
               <label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-slate-400">
                 Email Address
               </label>
@@ -203,10 +257,16 @@ const LoginPage = () => {
                 />
               </div>
               <p className="text-[10px] text-slate-500 font-medium italic">Use your authorized campus email address.</p>
-            </div>
+            </motion.div>
 
             {/* Password Field */}
-            <div className="space-y-1.5">
+            <motion.div 
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.4, ease: 'easeOut' }}
+              style={{ transform: 'translateZ(25px)' }}
+              className="space-y-1.5"
+            >
               <div className="flex items-center justify-between">
                 <label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   Password
@@ -235,13 +295,17 @@ const LoginPage = () => {
                   {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
                 </button>
               </div>
-            </div>
+            </motion.div>
 
             {/* Submit Button */}
             <motion.button
               type="submit"
-              whileHover={{ scale: 1.01 }}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.4, ease: 'easeOut' }}
+              whileHover={{ scale: 1.01, translateZ: '35px' }}
               whileTap={{ scale: 0.99 }}
+              style={{ transform: 'translateZ(30px)' }}
               className="w-full mt-2 inline-flex items-center justify-center rounded-2xl bg-indigo-600 hover:bg-indigo-500 px-4 py-3.5 text-sm font-bold text-white transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-600/10"
               disabled={loading}
             >
@@ -251,14 +315,20 @@ const LoginPage = () => {
           </form>
 
           {/* Account Redirect */}
-          <div className="mt-8 pt-6 border-t border-white/[0.06] text-center">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            style={{ transform: 'translateZ(15px)' }}
+            className="mt-8 pt-6 border-t border-white/[0.06] text-center"
+          >
             <p className="text-xs text-slate-400 font-medium">
               New to UniSolve?{' '}
               <Link to="/register" className="font-bold text-indigo-400 hover:text-indigo-300 transition-colors">
                 Create an account
               </Link>
             </p>
-          </div>
+          </motion.div>
         </motion.div>
       </div>
     </div>

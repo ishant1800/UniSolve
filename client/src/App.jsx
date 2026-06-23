@@ -259,11 +259,12 @@ function App() {
 
           {/* Right Main Panel Container with Stable Margins */}
           <div
-            className="flex-1 flex flex-col min-w-0 bg-slate-50 transition-[margin-left] duration-300 ease-in-out"
-            style={{ marginLeft: sidebarCollapsed ? '88px' : '280px' }}
+            className={`flex-1 flex flex-col min-w-0 bg-slate-50 transition-[margin-left] duration-300 ease-in-out ${
+              sidebarCollapsed ? 'md:ml-[88px]' : 'md:ml-[280px]'
+            }`}
           >
             {/* Sticky Floating Topbar */}
-            <header className="sticky top-0 bg-white/70 backdrop-blur-md border-b border-slate-200/80 px-6 py-4 flex items-center justify-between z-30">
+            <header className="sticky top-0 bg-white/70 backdrop-blur-md border-b border-slate-200/80 px-4 md:px-6 py-4 flex items-center justify-between z-30">
               <div className="flex items-center gap-3">
                 {/* Mobile Menu Toggle button */}
                 <button
@@ -385,7 +386,7 @@ function App() {
             </AnimatePresence>
 
             {/* Main Stable Scroll Routing Panel */}
-            <main className="flex-1 overflow-y-auto px-6 py-8 container mx-auto max-w-7xl">
+            <main className="flex-1 overflow-y-auto px-4 md:px-6 py-8 container mx-auto max-w-7xl">
               <Suspense fallback={<PageSkeleton />}>
                 <Routes>
                   <Route
