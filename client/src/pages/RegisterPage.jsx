@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
+import NeuralBackground from '../components/NeuralBackground';
 
 // SVG Grid Pattern for premium tech backdrop
 const GridBackground = () => (
@@ -130,7 +131,8 @@ const RegisterPage = () => {
   return (
     <div className="min-h-screen grid lg:grid-cols-12 bg-slate-950 font-sans text-slate-100 selection:bg-indigo-500 selection:text-white">
       {/* LEFT SIDE: Premium AI Branding & Dynamic Stats (Hidden on Mobile) */}
-      <div className="relative hidden lg:flex lg:col-span-5 xl:col-span-6 flex-col justify-between p-12 overflow-hidden bg-slate-950 border-r border-white/[0.06]">
+      <div className="relative hidden lg:flex lg:col-span-5 xl:col-span-6 flex-col justify-between p-12 overflow-hidden bg-[#0f1117] border-r border-white/[0.06]">
+        <NeuralBackground />
         {/* Glow Spheres */}
         <div className="absolute top-[-10%] right-[-20%] h-[600px] w-[600px] rounded-full bg-indigo-600/10 blur-[120px] pointer-events-none" />
         <div className="absolute bottom-[-10%] left-[-10%] h-[400px] w-[400px] rounded-full bg-purple-600/10 blur-[100px] pointer-events-none" />
